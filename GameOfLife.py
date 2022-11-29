@@ -7,6 +7,9 @@ class GameOfLife:
 
     def __init__(self, width, height):
         self.__grid = np.zeros((width, height))
+        self.__history = []
+        self.__history_length = 10
+
 
         self.__area_to_check = 1 # Radius around a cell to consider as neighbor
         self.__nb_neighbors_stay_alive = [2, 3]
@@ -15,11 +18,17 @@ class GameOfLife:
 
         self.__color_alive = pygame.color.Color(0, 0, 0)
         self.__color_dead = pygame.color.Color(255, 255, 255)
-        self.__color_grid = pygame.color.Color(100, 0, 0)
+        self.__color_grid = pygame.color.Color(100, 100, 100)
         self.__grid_border_width = 1
 
         self.__draw_nb_neighbours = False
         self.__nb_neighbors_color = pygame.color.Color(0, 150, 0)
+
+        self.__draw_trail = False
+        self.__trail_color_r = 100
+        self.__trail_color_g = 0
+        self.__trail_color_b = 0
+
 
     def is_alive(self, x, y):
         return self.__grid[x, y]
@@ -51,6 +60,9 @@ class GameOfLife:
                 elif self.is_dead(x, y) and nb_neighbors_alive in self.__nb_neighbors_become_alive:
                     next_grid[x, y] = True
 
+        self.__history.append(self.__grid)
+        if len(self.__history) >= self.__history_length:
+            self.__history = self.__history[1:]
         self.__grid = next_grid
 
     def randomize(self):
@@ -69,8 +81,6 @@ class GameOfLife:
         block_width = screen.get_width() / self.__grid.shape[0]
         block_height = screen.get_width() / self.__grid.shape[1]
 
-        font = pygame.font.Font('freesansbold.ttf', 16)
-
         for x in range(self.__grid.shape[0]):
             for y in range(self.__grid.shape[1]):
                 rect = pygame.Rect(x * block_width, y * block_height, block_width, block_height)
@@ -79,13 +89,28 @@ class GameOfLife:
                 else:
                     pygame.draw.rect(screen, self.__color_dead, rect)
 
-                if self.__draw_nb_neighbours:
+        font = pygame.font.Font('fonts/verdana.ttf', 16)
+        if self.__draw_nb_neighbours:
+            for x in range(self.__grid.shape[0]):
+                for y in range(self.__grid.shape[1]):
                     nb_neighbors_alive = self.get_nb_neighbors_alive(x, y)
-
                     text = font.render(str(nb_neighbors_alive), True, pygame.color.Color(self.__nb_neighbors_color))
                     textRect = text.get_rect()
                     textRect.center = (x * block_width + (block_width // 2), y * block_height + (block_width // 2))
                     screen.blit(text, textRect)
+
+        if self.__draw_trail:
+            for x in range(self.__grid.shape[0]):
+                for y in range(self.__grid.shape[1]):
+                    if self.is_alive(x, y):
+                        continue
+                    for i in range(len(self.__history)-1,-1, -1):
+                        if self.__history[i][x, y]:
+                            rect = pygame.Rect(x * block_width, y * block_height, block_width, block_height)
+                            alpha = (i / len(self.__history))
+                            color = pygame.color.Color(int(self.__trail_color_r*alpha), int(self.__trail_color_g*alpha), int(self.__trail_color_b*alpha))
+                            pygame.draw.rect(screen, color, rect)
+                            break
 
         for i in range(self.__grid.shape[0]):
             pygame.draw.rect(screen, self.__color_grid, pygame.Rect(i * block_width, 0, self.__grid_border_width, screen.get_height()))
@@ -96,4 +121,6 @@ class GameOfLife:
     def change_draw_nb_neighbors(self):
         self.__draw_nb_neighbours = not self.__draw_nb_neighbours
 
+    def change_draw_trail(self):
+        self.__draw_trail = not self.__draw_trail
 
