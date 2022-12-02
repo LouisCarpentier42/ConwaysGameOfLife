@@ -71,9 +71,6 @@ class GameOfLife:
             self.__history = self.__history[1:]
         self.__grid = next_grid
 
-    def randomize(self):
-        self.__grid = np.random.choice([0, 1], size=self.__grid.shape)
-
     def add_glider(self, x, y):
         for x_shift, y_shift in [[-1,0], [0, 1], [1,1], [1,0], [1,-1]]:
             self.make_alive(x + x_shift, y + y_shift)
